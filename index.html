@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>আমার ডায়েরি</title>
+<style>
+:root{--bg:#0F1820;--card:#172531;--card2:#1E3140;--ink:#EAF0F4;--mute:#8CA0AE;--line:#2A3F4F;--mint:#5FD6A7;--amber:#F2A541;--red:#E5645C;--violet:#9B8CFF}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans Bengali","Hind Siliguri",system-ui,sans-serif}
+body{padding:calc(14px + env(safe-area-inset-top,0px)) 16px calc(86px + env(safe-area-inset-bottom,0px))}
+h2{margin:6px 0 12px;font-size:22px}
+.card{background:var(--card);border-radius:16px;padding:16px;margin:12px 0}
+.hero{text-align:center;padding:22px 12px;background:linear-gradient(160deg,#1B3A33,#172531)}
+.hero small{color:var(--mute);font-size:13px}
+.big{font-size:30px;font-weight:800;color:var(--mint);margin:6px 0;line-height:1.25}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{background:var(--card);border-radius:14px;padding:14px}
+.stat b{display:block;font-size:22px}.stat span{font-size:12px;color:var(--mute)}
+.bar{height:10px;background:var(--line);border-radius:6px;overflow:hidden;margin-top:8px}
+.bar i{display:block;height:100%;background:var(--mint)}
+.btn{display:block;width:100%;padding:15px;border:0;border-radius:14px;font:inherit;font-size:17px;font-weight:600;margin:8px 0;color:#0B1218}
+.b-red{background:var(--amber)}.b-mint{background:var(--mint)}.b-vio{background:var(--violet)}.b-gray{background:var(--card2);color:var(--ink)}.b-bad{background:var(--red);color:#fff}
+.item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+.item:last-child{border:0}.item em{font-style:normal;color:var(--mute);font-size:12px;display:block}
+.x{background:none;border:0;color:var(--mute);font-size:18px}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:#0B1218;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+nav button{flex:1;background:none;border:0;color:var(--mute);padding:10px 0 8px;font:inherit;font-size:11px}
+nav button span{display:block;font-size:20px}
+nav button.on{color:var(--mint)}
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-end;z-index:9}
+.sheet.open{display:flex}
+.form{background:var(--card);width:100%;max-height:92vh;overflow:auto;border-radius:22px 22px 0 0;padding:18px 18px calc(22px + env(safe-area-inset-bottom,0px))}
+label{display:block;margin:14px 0 6px;font-size:13px;color:var(--mute)}
+input,select,textarea{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font:inherit}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips button{padding:9px 12px;border-radius:20px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:13px}
+.chips button.on{background:var(--mint);color:#0B1218;border-color:var(--mint)}
+.lv{display:flex;gap:8px}.lv button{flex:1;padding:12px 0;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:16px}
+.lv button.on{background:var(--amber);color:#0B1218;border-color:var(--amber)}
+.row{display:flex;gap:10px}.row .btn{margin:14px 0 0}
+.chart{display:flex;align-items:flex-end;gap:8px;height:120px}
+.chart div{flex:1;text-align:center;font-size:11px;color:var(--mute);display:flex;flex-direction:column;justify-content:flex-end;height:100%}
+.chart i{display:block;background:var(--amber);border-radius:4px 4px 0 0;margin-bottom:4px;min-height:2px}
+.rb{display:flex;align-items:center;gap:8px;font-size:13px;margin:7px 0}.rb span{min-width:110px}.rb div{flex:1;height:8px;background:var(--line);border-radius:5px}.rb div i{display:block;height:100%;background:var(--violet);border-radius:5px}
+.note{font-size:13px;color:var(--mute);line-height:1.6}
+.lock{position:fixed;inset:0;background:var(--bg);z-index:99;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+.lock.open{display:flex}.lock input{width:180px;text-align:center;font-size:28px;letter-spacing:10px}
+.cd{font-size:54px;font-weight:800;text-align:center;color:var(--amber);margin:10px 0}
+.hide{display:none}
+</style>
+</head>
+<body>
+<div id="view"></div>
+<nav id="nav"></nav>
+<div class="sheet" id="sheet"><div class="form" id="form"></div></div>
+<div class="lock" id="lock"><div style="font-size:42px">🔒</div><div>পিন দিন</div><input id="pin" type="password" inputmode="numeric" maxlength="4"></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const bn=s=>String(s).replace(/\d/g,d=>'০১২৩৪৫৬৭৮৯'[d]);
+const REASONS=['☕ চা/কফি','🍽 খাবারের পর','😣 মানসিক চাপ','🥱 বোরিং/অবসর','👥 বন্ধুদের সাথে','💼 কাজের বিরতি','😡 রাগ/বিরক্তি','🚽 অভ্যাস/টয়লেট','🌙 রাতে/ঘুমের আগে','📌 অন্যান্য'];
+const TIPS=['এক গ্লাস ঠান্ডা পানি ধীরে ধীরে খান','৪ সেকেন্ড শ্বাস নিন, ৪ সেকেন্ড ধরুন, ৪ সেকেন্ডে ছাড়ুন','জায়গা বদলান: হাঁটুন বা বারান্দায় যান','মুখে মৌরি, এলাচ বা চুইংগাম রাখুন','কাউকে ফোন করুন বা মেসেজ দিন','ক্র্যাভিং সাধারণত ৫-১০ মিনিটে কমে যায়, অপেক্ষা করুন'];
+const DEF={s:{base:15,price:15,limit:10,quit:'',pin:'',xl:'ব্যক্তিগত',rem:true},c:[],cv:[],x:[]};
+function load(){try{const v=JSON.parse(localStorage.getItem('dd'));return v?{...DEF,...v,s:{...DEF.s,...v.s}}:JSON.parse(JSON.stringify(DEF))}catch(e){return JSON.parse(JSON.stringify(DEF))}}
+let D=load(),tab='home',sel={why:'',lv:3},cdState=null,cdInt=null;
+const save=()=>{try{localStorage.setItem('dd',JSON.stringify(D))}catch(e){}};
+const dk=t=>{const d=new Date(t);return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()};
+const loc=t=>{const d=new Date(t);return new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,16)};
+const tm=t=>{const d=new Date(t);let h=d.getHours(),m=d.getMinutes();return bn((h%12||12)+':'+String(m).padStart(2,'0'))+' '+(h<12?'সকাল':h<16?'দুপুর':h<18?'বিকাল':h<20?'সন্ধ্যা':'রাত')};
+const dt=t=>bn(new Date(t).getDate())+'/'+bn(new Date(t).getMonth()+1)+' '+tm(t);
+const dur=ms=>{const m=Math.max(0,Math.floor(ms/6e4)),d=Math.floor(m/1440),h=Math.floor(m%1440/60),mm=m%60;return (d?bn(d)+' দিন ':'')+(d||h?bn(h)+' ঘণ্টা ':'')+bn(mm)+' মিনিট'};
+const today=()=>D.c.filter(c=>dk(c.t)===dk(Date.now()));
+const sorted=a=>a.slice().sort((x,y)=>y.t-x.t);
+
+function stats(){
+ const c=sorted(D.c),n=D.c.length;
+ const first=D.s.quit?new Date(D.s.quit).getTime():(n?Math.min(...D.c.map(x=>x.t)):Date.now());
+ const days=Math.max(1,Math.ceil((Date.now()-first)/864e5));
+ const avoided=Math.max(0,D.s.base*days-n);
+ return{c,n,days,avoided,saved:Math.round(avoided*D.s.price)};
+}
+function render(){
+ const v=$('view');
+ if(tab==='home')v.innerHTML=home();
+ else if(tab==='crave')v.innerHTML=crave();
+ else if(tab==='x')v.innerHTML=xTab();
+ else if(tab==='rep')v.innerHTML=report();
+ else v.innerHTML=settings();
+ const tabs=[['home','🏠','হোম'],['crave','⚡','ক্র্যাভিং'],['x','💠',D.s.xl],['rep','📊','রিপোর্ট'],['set','⚙️','সেটিং']];
+ $('nav').innerHTML=tabs.map(t=>`<button class="${tab===t[0]?'on':''}" data-tab="${t[0]}"><span>${t[1]}</span>${t[2]}</button>`).join('');
+ tickSince();
+}
+function home(){
+ const S=stats(),td=today(),over=td.length>D.s.limit,pct=Math.min(100,td.length/Math.max(1,D.s.limit)*100);
+ const list=td.length?sorted(td).map(c=>`<div class="item"><div>${tm(c.t)}<em>${c.why||'—'}${c.lv?' · ইচ্ছা '+bn(c.lv)+'/৫':''}</em></div><button class="x" data-delc="${c.t}">✕</button></div>`).join(''):'<div class="note">আজ এখনো কোনো সিগারেট লগ হয়নি।</div>';
+ return `<h2>আজকের হিসাব</h2>
+ <div class="card hero"><small>শেষ সিগারেটের পর থেকে</small><div class="big" id="since">—</div><small id="sinceSub"></small></div>
+ <div class="card"><div style="display:flex;justify-content:space-between"><b>আজ ${bn(td.length)} / ${bn(D.s.limit)} টি</b><span style="color:${over?'var(--red)':'var(--mint)'}">${over?'লিমিট ছাড়িয়েছে':'লিমিটের মধ্যে'}</span></div><div class="bar"><i style="width:${pct}%;background:${over?'var(--red)':'var(--mint)'}"></i></div></div>
+ <button class="btn b-red" data-act="log">🚬 একটা খেলাম (লগ করুন)</button>
+ <button class="btn b-mint" data-act="cravego">⚡ ক্র্যাভিং এসেছে</button>
+ <div class="grid"><div class="stat"><b>${bn(S.avoided)}</b><span>কম খাওয়া সিগারেট</span></div><div class="stat"><b>৳${bn(S.saved)}</b><span>বাঁচানো টাকা (আনুমানিক)</span></div></div>
+ <div class="card"><b>আজকের তালিকা</b>${list}</div>`;
+}
+function tickSince(){
+ const el=$('since');if(!el)return;
+ const last=sorted(D.c)[0];
+ if(last){el.textContent=dur(Date.now()-last.t);$('sinceSub').textContent='শেষ টেনেছেন '+dt(last.t)}
+ else if(D.s.quit){el.textContent=dur(Date.now()-new Date(D.s.quit).getTime());$('sinceSub').textContent='ছাড়ার তারিখ থেকে'}
+ else{el.textContent='শুরু করুন';$('sinceSub').textContent='প্রথম সিগারেট লগ করলে বা সেটিংসে ছাড়ার তারিখ দিলে টাইমার চলবে'}
+}
+setInterval(tickSince,30000);
+
+function openSheet(h){$('form').innerHTML=h;$('sheet').classList.add('open')}
+function closeSheet(){$('sheet').classList.remove('open')}
+const chips=(arr,k)=>`<div class="chips" data-chips="${k}">${arr.map(r=>`<button data-v="${r}" class="${sel[k]===r?'on':''}">${r}</button>`).join('')}</div>`;
+const lvl=()=>`<div class="lv" data-lv>${[1,2,3,4,5].map(i=>`<button data-v="${i}" class="${sel.lv===i?'on':''}">${bn(i)}</button>`).join('')}</div>`;
+function logSheet(why){
+ sel={why:why||'',lv:3};
+ openSheet(`<h2>সিগারেট লগ</h2><label>কখন</label><input type="datetime-local" id="lt" value="${loc(Date.now())}"><label>কেন টানলাম?</label>${chips(REASONS,'why')}<label>টানার আগে ইচ্ছা কতটা (১ = সামান্য, ৫ = প্রচণ্ড)</label>${lvl()}<label>নোট (ঐচ্ছিক)</label><input id="ln"><div class="row"><button class="btn b-gray" data-act="close">বাতিল</button><button class="btn b-red" data-act="savelog">সেভ</button></div>`);
+}
+function crave(){
+ if(cdState){return `<h2>ক্র্যাভিং সামলান</h2><div class="card"><div class="cd" id="cdt">১০:০০</div><div class="note" id="tip" style="text-align:center;font-size:15px">${TIPS[0]}</div></div><button class="btn b-mint" data-act="resisted">✅ সামলে নিয়েছি</button><button class="btn b-bad" data-act="gaveIn">খেয়ে ফেললাম</button>`}
+ const cv=sorted(D.cv),r=D.cv.filter(x=>x.res).length,rate=D.cv.length?Math.round(r/D.cv.length*100):0;
+ return `<h2>ক্র্যাভিং</h2><button class="btn b-mint" data-act="cravego">⚡ ক্র্যাভিং এসেছে, ১০ মিনিট টাইমার চালু করুন</button>
+ <div class="grid"><div class="stat"><b>${bn(r)}</b><span>সামলেছি</span></div><div class="stat"><b>${bn(rate)}%</b><span>সফলতার হার</span></div></div>
+ <div class="card"><b>সাম্প্রতিক ক্র্যাভিং</b>${cv.slice(0,15).map(x=>`<div class="item"><div>${dt(x.t)}<em>${x.why||'—'} · তীব্রতা ${bn(x.lv)}/৫</em></div><span>${x.res?'✅':'❌'}</span></div>`).join('')||'<div class="note">এখনো কিছু নেই।</div>'}</div>`;
+}
+function crSheet(){sel={why:'',lv:3};openSheet(`<h2>ক্র্যাভিং কতটা?</h2>${lvl()}<label>কী থেকে এল?</label>${chips(REASONS,'why')}<div class="row"><button class="btn b-gray" data-act="close">বাতিল</button><button class="btn b-mint" data-act="startcd">টাইমার শুরু</button></div>`)}
+async function startCd(){
+ cdState={t:Date.now(),lv:sel.lv,why:sel.why,end:Date.now()+6e5};closeSheet();tab='crave';render();
+ const L=LN();if(L){try{await L.schedule({notifications:[{id:2,title:'💪 ১০ মিনিট পার!',body:'ক্র্যাভিং প্রায় শেষ। আপনি পেরেছেন।',channelId:CH,schedule:{at:new Date(cdState.end),allowWhileIdle:true}}]})}catch(e){}}
+ clearInterval(cdInt);cdInt=setInterval(()=>{const e=$('cdt');if(!e||!cdState){clearInterval(cdInt);return}
+  const left=Math.max(0,cdState.end-Date.now()),m=Math.floor(left/6e4),s=Math.floor(left%6e4/1000);
+  e.textContent=bn(String(m).padStart(2,'0')+':'+String(s).padStart(2,'0'));
+  $('tip').textContent=left?TIPS[Math.floor((Date.now()-cdState.t)/3e4)%TIPS.length]:'🎉 ১০ মিনিট পার হয়ে গেছে! ক্র্যাভিং এখন কমে এসেছে।'},1000);
+}
+async function endCd(res){
+ if(!cdState)return;D.cv.push({t:cdState.t,lv:cdState.lv,why:cdState.why,res});save();
+ const w=cdState.why;cdState=null;clearInterval(cdInt);
+ const L=LN();if(L){try{await L.cancel({notifications:[{id:2}]})}catch(e){}}
+ if(res){tab='home';render()}else{tab='home';render();logSheet(w)}
+}
+
+function xTab(){
+ const L=sorted(D.x),last=L[0];
+ const asc=D.x.map(x=>x.t).sort((a,b)=>a-b);let gaps=[];for(let i=1;i<asc.length;i++)gaps.push(asc[i]-asc[i-1]);
+ const avg=gaps.length?gaps.reduce((a,b)=>a+b,0)/gaps.length:0,mx=gaps.length?Math.max(...gaps):0;
+ const now=new Date(),mo=D.x.filter(x=>{const d=new Date(x.t);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()}).length;
+ const dd=n=>bn(Math.round(n/864e5*10)/10);
+ return `<h2>${D.s.xl}</h2>
+ <div class="card hero"><small>শেষ লগের পর বিরতি</small><div class="big" style="color:var(--violet)">${last?dur(Date.now()-last.t):'—'}</div><small>${last?'শেষ: '+dt(last.t):'এখনো লগ নেই'}</small></div>
+ <button class="btn b-vio" data-act="xlog">➕ লগ করুন</button>
+ <div class="grid"><div class="stat"><b>${bn(mo)}</b><span>এই মাসে</span></div><div class="stat"><b>${bn(D.x.length)}</b><span>মোট লগ</span></div><div class="stat"><b>${gaps.length?dd(avg)+' দিন':'—'}</b><span>গড় বিরতি</span></div><div class="stat"><b>${gaps.length?dd(mx)+' দিন':'—'}</b><span>সবচেয়ে বড় বিরতি</span></div></div>
+ <div class="card"><b>সাম্প্রতিক</b>${L.slice(0,20).map(x=>`<div class="item"><div>${dt(x.t)}<em>${x.n||''}</em></div><button class="x" data-delx="${x.t}">✕</button></div>`).join('')||'<div class="note">এখনো কিছু নেই।</div>'}</div>`;
+}
+function xSheet(){openSheet(`<h2>${D.s.xl} লগ</h2><label>কখন</label><input type="datetime-local" id="xt" value="${loc(Date.now())}"><label>নোট (ঐচ্ছিক)</label><input id="xn"><div class="row"><button class="btn b-gray" data-act="close">বাতিল</button><button class="btn b-vio" data-act="savex">সেভ</button></div>`)}
+
+function report(){
+ const bars=[];for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const n=D.c.filter(c=>dk(c.t)===dk(d)).length;bars.push({n,l:['রবি','সোম','মঙ্গল','বুধ','বৃহ','শুক্র','শনি'][d.getDay()]})}
+ const mx=Math.max(1,...bars.map(b=>b.n));
+ const rs={};D.c.forEach(c=>{if(c.why)rs[c.why]=(rs[c.why]||0)+1});
+ const rl=Object.entries(rs).sort((a,b)=>b[1]-a[1]),rmax=rl.length?rl[0][1]:1;
+ const hr=Array(24).fill(0);D.c.forEach(c=>hr[new Date(c.t).getHours()]++);
+ const top=hr.map((n,h)=>({n,h})).filter(x=>x.n).sort((a,b)=>b.n-a.n).slice(0,3);
+ const asc=D.c.map(c=>c.t).sort((a,b)=>a-b);let best=0;for(let i=1;i<asc.length;i++)best=Math.max(best,asc[i]-asc[i-1]);
+ const wk=bars.reduce((a,b)=>a+b.n,0);
+ return `<h2>রিপোর্ট</h2>
+ <div class="card"><b>গত ৭ দিন (মোট ${bn(wk)}টি)</b><div class="chart" style="margin-top:12px">${bars.map(b=>`<div><i style="height:${b.n/mx*80}px"></i>${bn(b.n)}<br>${b.l}</div>`).join('')}</div></div>
+ <div class="card"><b>কেন টানি (কারণ অনুযায়ী)</b>${rl.map(([k,v])=>`<div class="rb"><span>${k}</span><div><i style="width:${v/rmax*100}%"></i></div>${bn(v)}</div>`).join('')||'<div class="note">কারণসহ লগ করলে এখানে দেখা যাবে।</div>'}</div>
+ <div class="card"><b>বিপজ্জনক সময়</b><div class="note" style="margin-top:8px">${top.length?top.map(x=>tm(new Date().setHours(x.h,0))+' এর আশেপাশে ('+bn(x.n)+'বার)').join('<br>'):'আরও লগ করলে দেখা যাবে।'}</div></div>
+ <div class="card"><b>সবচেয়ে লম্বা বিরতি (দুই সিগারেটের মাঝে)</b><div class="big" style="font-size:22px">${best?dur(best):'—'}</div></div>`;
+}
+function settings(){const s=D.s;return `<h2>সেটিং</h2><div class="card">
+ <label>আগে দিনে গড়ে কয়টা খেতেন</label><input id="sb" type="number" value="${s.base}">
+ <label>প্রতিটি সিগারেটের দাম (টাকা)</label><input id="sp" type="number" value="${s.price}">
+ <label>আজকের দৈনিক লিমিট (ধাপে ধাপে কমান)</label><input id="sl" type="number" value="${s.limit}">
+ <label>ছাড়া শুরুর তারিখ</label><input id="sq" type="datetime-local" value="${s.quit}">
+ <label>গোপন ট্যাবের নাম</label><input id="sx" value="${s.xl}">
+ <label>অ্যাপ পিন (৪ সংখ্যা, ফাঁকা = পিন নেই)</label><input id="spin" type="password" inputmode="numeric" maxlength="4" value="${s.pin}">
+ <label>রাত ৯টায় হিসাব লেখার রিমাইন্ডার</label><select id="sr"><option value="1" ${s.rem?'selected':''}>চালু</option><option value="0" ${s.rem?'':'selected'}>বন্ধ</option></select>
+ <button class="btn b-mint" data-act="savesettings">সেভ করুন</button></div>
+ <button class="btn b-gray" data-act="export">📋 ডেটা কপি (ব্যাকআপ)</button>
+ <button class="btn b-bad" data-act="reset">সব ডেটা মুছুন</button>
+ <div class="note">সব তথ্য শুধু আপনার ফোনেই থাকে, কোথাও পাঠানো হয় না।</div>`}
+
+document.addEventListener('click',e=>{
+ const t=e.target.closest('[data-tab]');if(t){tab=t.dataset.tab;render();return}
+ const ch=e.target.closest('[data-chips] button');if(ch){const k=ch.parentElement.dataset.chips;sel[k]=sel[k]===ch.dataset.v?'':ch.dataset.v;[...ch.parentElement.children].forEach(b=>b.classList.toggle('on',b.dataset.v===sel[k]));return}
+ const lv=e.target.closest('[data-lv] button');if(lv){sel.lv=+lv.dataset.v;[...lv.parentElement.children].forEach(b=>b.classList.toggle('on',+b.dataset.v===sel.lv));return}
+ const dc=e.target.closest('[data-delc]');if(dc){if(confirm('এই লগ মুছবেন?')){D.c=D.c.filter(c=>c.t!==+dc.dataset.delc);save();render()}return}
+ const dx=e.target.closest('[data-delx]');if(dx){if(confirm('এই লগ মুছবেন?')){D.x=D.x.filter(c=>c.t!==+dx.dataset.delx);save();render()}return}
+ const a=e.target.closest('[data-act]');if(!a)return;const act=a.dataset.act;
+ if(act==='log')logSheet();
+ else if(act==='close')closeSheet();
+ else if(act==='savelog'){D.c.push({t:new Date($('lt').value).getTime()||Date.now(),why:sel.why,lv:sel.lv,n:$('ln').value});save();closeSheet();render()}
+ else if(act==='cravego'){tab='crave';if(cdState)render();else{render();crSheet()}}
+ else if(act==='startcd')startCd();
+ else if(act==='resisted')endCd(true);
+ else if(act==='gaveIn')endCd(false);
+ else if(act==='xlog')xSheet();
+ else if(act==='savex'){D.x.push({t:new Date($('xt').value).getTime()||Date.now(),n:$('xn').value});save();closeSheet();render()}
+ else if(act==='savesettings'){D.s={base:+$('sb').value||0,price:+$('sp').value||0,limit:+$('sl').value||1,quit:$('sq').value,xl:$('sx').value.trim()||'ব্যক্তিগত',pin:$('spin').value.replace(/\D/g,''),rem:$('sr').value==='1'};save();reminders();alert('সেভ হয়েছে');render()}
+ else if(act==='export'){const s=JSON.stringify(D);try{navigator.clipboard.writeText(s);alert('ডেটা কপি হয়েছে। কোথাও পেস্ট করে সংরক্ষণ করুন।')}catch(x){prompt('কপি করুন',s)}}
+ else if(act==='reset'){if(confirm('সব ডেটা মুছে যাবে। নিশ্চিত?')){D=JSON.parse(JSON.stringify(DEF));save();render()}}
+});
+$('sheet').addEventListener('click',e=>{if(e.target.id==='sheet')closeSheet()});
+
+// PIN lock
+function lockCheck(){if(D.s.pin){$('lock').classList.add('open');$('pin').value=''}}
+$('pin').addEventListener('input',e=>{if(e.target.value===D.s.pin){$('lock').classList.remove('open')}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)lockCheck()});
+
+// Notifications
+const LN=()=>window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.LocalNotifications;
+const CH='diary-alert';
+async function initNotif(){const L=LN();if(!L)return;
+ try{await L.requestPermissions()}catch(e){}
+ try{await L.createChannel({id:CH,name:'ডায়েরি রিমাইন্ডার',importance:4,vibration:true})}catch(e){}
+ reminders()}
+async function reminders(){const L=LN();if(!L)return;
+ try{await L.cancel({notifications:[{id:1}]});
+  if(D.s.rem)await L.schedule({notifications:[{id:1,title:'📝 আজকের হিসাব',body:'আজ কয়টা খেয়েছেন? লগ করে রাখুন।',channelId:CH,schedule:{on:{hour:21,minute:0},allowWhileIdle:true}}]})}catch(e){}}
+
+render();lockCheck();initNotif();
+</script>
+</body>
+</html>
